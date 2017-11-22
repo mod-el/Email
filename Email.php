@@ -10,11 +10,7 @@ class Email{
 	protected $messaggio;
 	protected $main_address_set;
 
-	public function __construct($subject, $text, array $opt = [], $check_retro = null){
-		if($check_retro!==null){
-			throw new \Exception('Email class has now only 3 parameters! Address in constructor is deprecated.');
-		}
-
+	public function __construct($subject, $text, array $opt = []){
 		$this->options = array_merge([
 			'from_name' => defined('EMAILS_DEFAULT_NAME') ? EMAILS_DEFAULT_NAME : '',
 			'from_mail' => defined('EMAILS_DEFAULT_SENDER') ? EMAILS_DEFAULT_SENDER : '',
