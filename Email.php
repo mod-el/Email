@@ -34,13 +34,13 @@ class Email{
 		$this->messaggio = new PHPMailer();
 		if($this->options['smtp']) {
 			$this->messaggio->IsSMTP();
-			$this->messaggio->SMTPOptions = array(
-				'ssl' => array(
+			$this->messaggio->SMTPOptions = [
+				'ssl' => [
 					'verify_peer' => false,
 					'verify_peer_name' => false,
 					'allow_self_signed' => true,
-				)
-			);
+				]
+			];
 			if($this->options['encryption'])
 				$this->messaggio->SMTPSecure = $this->options['encryption'];
 			$this->messaggio->Host = $this->options['smtp'];
