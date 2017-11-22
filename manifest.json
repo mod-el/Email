@@ -1,0 +1,7 @@
+{
+	"name": "Email",
+	"description": "Wanna send a message? - uses PHPMailer 6.0.1",
+	"version": "1.3.0",
+	"dependencies": {},
+	"load": false
+}
