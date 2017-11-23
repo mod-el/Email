@@ -58,11 +58,9 @@ class Email{
 		$this->messaggio->IsHTML(true);
 		$this->messaggio->CharSet = $this->options['charset'];
 
-		$this->messaggio->From = $this->options['from_mail'];
-		$this->messaggio->FromName = $this->options['from_name'];
-		$this->messaggio->AddReplyTo($this->options['from_mail']);
+		$this->messaggio->setFrom($this->options['from_mail'], $this->options['from_name']);
+		$this->messaggio->AddReplyTo($this->options['from_mail'], $this->options['from_name']);
 		$this->messaggio->Subject = $subject;
-		$this->messaggio->Sender = $this->options['from_mail'];
 
 		$this->setText($text);
 	}
