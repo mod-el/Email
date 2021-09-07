@@ -1,88 +1,89 @@
 <?php namespace Model\Email;
 
 use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\POP3;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
 
 class Email
 {
+	/** @var array */
 	protected $options;
-	protected $messaggio;
-	protected $main_address_set;
+	/** @var PHPMailer */
+	protected $message;
+	/** @var bool */
+	protected $main_address_set = false;
 
-	public function __construct(string $subject, string $text, array $opt = [])
+	public function __construct(string $subject, string $text, array $options = [])
 	{
-		$this->options = array_merge([
-			'from_name' => defined('EMAILS_DEFAULT_NAME') ? EMAILS_DEFAULT_NAME : '',
-			'from_mail' => defined('EMAILS_DEFAULT_SENDER') ? EMAILS_DEFAULT_SENDER : '',
-			'smtp' => defined('EMAILS_SMTP') ? EMAILS_SMTP : false,
-			'port' => defined('EMAILS_SMTP_PORT') ? EMAILS_SMTP_PORT : 25,
-			'header' => defined('EMAILS_HEADER') ? EMAILS_HEADER : '',
-			'footer' => defined('EMAILS_FOOTER') ? EMAILS_FOOTER : '',
-			'debug' => false,
-			'username' => defined('EMAILS_SMTP_USERNAME') ? EMAILS_SMTP_USERNAME : false,
-			'password' => defined('EMAILS_SMTP_PASSWORD') ? EMAILS_SMTP_PASSWORD : false,
-			'encryption' => defined('EMAILS_ENCTYPTION') ? EMAILS_ENCTYPTION : false,
-			'charset' => 'UTF-8',
-		], $opt);
-		$this->main_address_set = false;
+		require(INCLUDE_PATH . 'app' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR . 'Email' . DIRECTORY_SEPARATOR . 'config.php');
+		$this->options = array_merge($config, $options);
 
-		require_once(__DIR__ . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . 'phpmailer' . DIRECTORY_SEPARATOR . 'PHPMailer.php');
-		require_once(__DIR__ . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . 'phpmailer' . DIRECTORY_SEPARATOR . 'POP3.php');
-		require_once(__DIR__ . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . 'phpmailer' . DIRECTORY_SEPARATOR . 'SMTP.php');
-		require_once(__DIR__ . DIRECTORY_SEPARATOR . 'files' . DIRECTORY_SEPARATOR . 'phpmailer' . DIRECTORY_SEPARATOR . 'Exception.php');
+		/** Retrocompatibilità **/
+		if (defined('EMAILS_DEFAULT_NAME'))
+			$this->options['from_name'] = EMAILS_DEFAULT_NAME;
+		if (defined('EMAILS_DEFAULT_SENDER'))
+			$this->options['from_mail'] = EMAILS_DEFAULT_SENDER;
+		if (defined('EMAILS_SMTP'))
+			$this->options['smtp'] = (bool)EMAILS_SMTP;
+		if (defined('EMAILS_SMTP_PORT'))
+			$this->options['port'] = EMAILS_SMTP_PORT;
+		if (defined('EMAILS_HEADER'))
+			$this->options['header'] = EMAILS_HEADER;
+		if (defined('EMAILS_FOOTER'))
+			$this->options['footer'] = EMAILS_FOOTER;
+		if (defined('EMAILS_SMTP_USERNAME'))
+			$this->options['username'] = EMAILS_SMTP_USERNAME;
+		if (defined('EMAILS_SMTP_PASSWORD'))
+			$this->options['password'] = EMAILS_SMTP_PASSWORD;
+		if (defined('EMAILS_ENCTYPTION'))
+			$this->options['encryption'] = EMAILS_ENCTYPTION;
+		/** **/
 
-		$this->messaggio = new PHPMailer();
+		$this->message = new PHPMailer();
 		if ($this->options['smtp']) {
-			$this->messaggio->IsSMTP();
-			$this->messaggio->SMTPOptions = [
+			$this->message->IsSMTP();
+			$this->message->SMTPOptions = [
 				'ssl' => [
 					'verify_peer' => false,
 					'verify_peer_name' => false,
 					'allow_self_signed' => true,
-				]
+				],
 			];
 			if ($this->options['encryption'])
-				$this->messaggio->SMTPSecure = $this->options['encryption'];
-			$this->messaggio->Host = $this->options['smtp'];
-			$this->messaggio->Port = $this->options['port'];
+				$this->message->SMTPSecure = $this->options['encryption'];
+			$this->message->Host = $this->options['smtp'];
+			$this->message->Port = $this->options['port'];
 			if ($this->options['username']) {
-				$this->messaggio->SMTPAuth = true;
-				$this->messaggio->Username = $this->options['username'];
+				$this->message->SMTPAuth = true;
+				$this->message->Username = $this->options['username'];
 				if ($this->options['password'])
-					$this->messaggio->Password = $this->options['password'];
+					$this->message->Password = $this->options['password'];
 			}
 			if (DEBUG_MODE and $this->options['debug'])
-				$this->messaggio->SMTPDebug = 2;
+				$this->message->SMTPDebug = 2;
 		}
 
-		$this->messaggio->IsHTML(true);
-		$this->messaggio->CharSet = $this->options['charset'];
+		$this->message->IsHTML(true);
+		$this->message->CharSet = $this->options['charset'];
 
-		$this->messaggio->setFrom($this->options['from_mail'], $this->options['from_name']);
-		$this->messaggio->AddReplyTo($this->options['from_mail'], $this->options['from_name']);
-		$this->messaggio->Subject = $subject;
+		$this->message->setFrom($this->options['from_mail'], $this->options['from_name']);
+		$this->message->AddReplyTo($this->options['from_mail'], $this->options['from_name']);
+		$this->message->Subject = $subject;
 
 		$this->setText($text);
 	}
 
 	public function __destruct()
 	{
-		unset($this->messaggio);
+		unset($this->message);
 	}
 
-	public function addAddress($send_to)
+	public function addAddress(array $send_to)
 	{
-		if (!is_array($send_to))
-			$send_to = [$send_to];
-
-		foreach ($send_to as $c_em => $em) {
+		foreach ($send_to as $em) {
 			if (!$this->main_address_set) {
-				$this->messaggio->AddAddress($em);
+				$this->message->AddAddress($em);
 				$this->main_address_set = true;
 			} else {
-				$this->messaggio->AddBCC($em);
+				$this->message->AddBCC($em);
 			}
 		}
 	}
@@ -90,30 +91,29 @@ class Email
 	public function setText(string $text)
 	{
 		$text = $this->options['header'] . $text . $this->options['footer'];
-		$this->messaggio->Body = $text;
+		$this->message->Body = $text;
 		$plain = html_entity_decode(trim(strip_tags(preg_replace('/<(head|title|style|script)[^>]*>.*?<\/\\1>/si', '', $text))), ENT_QUOTES, 'utf-8');
-		$this->messaggio->AltBody = $plain;
+		$this->message->AltBody = $plain;
 	}
 
-	public function send($emails = null): bool
+	public function send($emails = null)
 	{
-		if ($emails !== null)
-			$this->addAddress($emails);
+		if ($emails !== null) {
+			if (!is_array($emails))
+				$emails = [$emails];
 
-		if (!$this->messaggio->Send()) {
-			$sent = false;
-			if (DEBUG_MODE)
-				echo $this->messaggio->ErrorInfo;
-		} else {
-			$sent = true;
+			$this->addAddress($emails);
 		}
+
+		if (!$this->message->Send())
+			throw new \Exception($this->message->ErrorInfo);
+
 		if ($this->options['smtp'])
-			$this->messaggio->SmtpClose();
-		return $sent;
+			$this->message->SmtpClose();
 	}
 
 	public function attachFile(string $path, string $name)
 	{
-		$this->messaggio->AddAttachment($path, $name);
+		$this->message->AddAttachment($path, $name);
 	}
 }
