@@ -1,6 +1,6 @@
 {
 	"name": "Email",
-	"description": "Wanna send a message? - requires phpmailer/phpmailer",
+	"description": "DEPRECATED (use model/email)",
 	"version": "2.0.0",
 	"dependencies": {
 		"Core": ">=2.10.0"
